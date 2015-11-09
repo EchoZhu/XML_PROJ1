@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.print.attribute.standard.OutputDeviceAssigned;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -41,7 +42,7 @@ public class DivideByDOM {
 		factory.setIgnoringElementContentWhitespace(true);
 		//获取dom解析器
 		DocumentBuilder builder = factory.newDocumentBuilder();
-		Document doc_ipo = builder.parse("ipo.xml");
+		Document doc_ipo = builder.parse("/Users/zhuyikun/xml/Projects/Project1/ipo.xml");
 		Document doc_IBM = builder.newDocument();
 		Document doc_ABC = builder.newDocument();
 		Element purchaseOrders = doc_ipo.getDocumentElement();
@@ -56,8 +57,8 @@ public class DivideByDOM {
 				if (comp_name.getTextContent().equals("IBM")) {
 					//将IBM或者ABC所在的节点强制类型转化为Element类型，方便后续清除属性处理
 					purchaseOrder_ibm = (Element) node;
-					//清除属性
-					clearAttributes_IBM(purchaseOrder_ibm);
+					//将节点属性值转化为子节点
+					arangeElement(doc_ipo,purchaseOrder_ibm);
 					//创建IBM_COMP.xml
 					creatIBM_COMP(doc_IBM,purchaseOrder_ibm);
 				}
@@ -84,19 +85,18 @@ public class DivideByDOM {
 	 * 将节点属性值转化为子节点
 	 * 
 	 * @param document
-	 * @param purchaseOrder_abc1
+	 * @param purchaseOrder_ibm
 	 */
-	private static void arangeElement(Document document,Element purchaseOrder_abc1) {
+	private static void arangeElement(Document document,Element purchaseOrder) {
 		// TODO Auto-generated method stub
-		purchaseOrder_abc1.getAttributes().removeNamedItem("comp_name");
+		purchaseOrder.getAttributes().removeNamedItem("comp_name");
 		//获取shipTo节点的属性值
-		String exp = ((Element) purchaseOrder_abc1.getElementsByTagName("shipTo").item(0)).getAttributeNode("export-code").getTextContent();
-		String type = ((Element) purchaseOrder_abc1.getElementsByTagName("shipTo").item(0)).getAttributeNode("type").getTextContent();
+		String exp = ((Element) purchaseOrder.getElementsByTagName("shipTo").item(0)).getAttributeNode("export-code").getTextContent();
+		String type = ((Element) purchaseOrder.getElementsByTagName("shipTo").item(0)).getAttributeNode("type").getTextContent();
 		//获取billTo节点的属性值
-		String type_billTo = ((Element) purchaseOrder_abc1.getElementsByTagName("billTo").item(0)).getAttributeNode("type").getTextContent();
-		
+		String type_billTo = ((Element) purchaseOrder.getElementsByTagName("billTo").item(0)).getAttributeNode("type").getTextContent();
 		//获取item节点的属性值
-		Element items_abc = (Element) purchaseOrder_abc1.getElementsByTagName("Items").item(0);
+		Element items_abc = (Element) purchaseOrder.getElementsByTagName("Items").item(0);
 		int i = 0;
 		Map<Integer, String> map = new HashMap<Integer, String>();
 		//如果存在item节点
@@ -104,20 +104,15 @@ public class DivideByDOM {
 			Element item_abc = (Element) items_abc.getElementsByTagName("item").item(i);
 			String partNum = item_abc.getAttributeNode("partNum").getTextContent();
 			map.put(i, partNum);
-			System.out.println(map.get(i)+"");
 	        //删除item节点的属性值
 			item_abc.getAttributes().removeNamedItem("partNum");
-			
 			i++;
 		}
-		System.out.println("i="+i);	
 //		删除shipTo节点的属性值
-		purchaseOrder_abc1.getElementsByTagName("shipTo").item(0).getAttributes().removeNamedItem("export-code");
-		purchaseOrder_abc1.getElementsByTagName("shipTo").item(0).getAttributes().removeNamedItem("type");
+		purchaseOrder.getElementsByTagName("shipTo").item(0).getAttributes().removeNamedItem("export-code");
+		purchaseOrder.getElementsByTagName("shipTo").item(0).getAttributes().removeNamedItem("type");
 //		删除billTo节点的属性值
-		purchaseOrder_abc1.getElementsByTagName("billTo").item(0).getAttributes().removeNamedItem("type");
-		
-		
+		purchaseOrder.getElementsByTagName("billTo").item(0).getAttributes().removeNamedItem("type");
 		
 //		创建节点<export-code>1</export-code> 
 		Element export_codeeElement = document.createElement("export-code");
@@ -135,18 +130,17 @@ public class DivideByDOM {
 		for (int j = 0; j < i; j++) {
 			Element partNum = document.createElement("partNum");
 			partNum.appendChild(document.createTextNode(map.get(j)));
-			Element Items = (Element) purchaseOrder_abc1.getElementsByTagName("Items").item(0);
+			Element Items = (Element) purchaseOrder.getElementsByTagName("Items").item(0);
 			Element item_abc = (Element) Items.getElementsByTagName("item").item(j);
 			item_abc.insertBefore(partNum, item_abc.getFirstChild());
 		}
 		
 		//将新创建的两个节点添加到shipTo节点之下，注意插入位置
-		((Element) purchaseOrder_abc1.getElementsByTagName("shipTo").item(0)).insertBefore(export_codeeElement, purchaseOrder_abc1.getElementsByTagName("shipTo").item(0).getFirstChild());
-		((Element) purchaseOrder_abc1.getElementsByTagName("shipTo").item(0)).insertBefore(typeElement, purchaseOrder_abc1.getElementsByTagName("shipTo").item(0).getChildNodes().item(1));
+		((Element) purchaseOrder.getElementsByTagName("shipTo").item(0)).insertBefore(export_codeeElement, purchaseOrder.getElementsByTagName("shipTo").item(0).getFirstChild());
+		((Element) purchaseOrder.getElementsByTagName("shipTo").item(0)).insertBefore(typeElement, purchaseOrder.getElementsByTagName("shipTo").item(0).getChildNodes().item(1));
 
 		//将新创建的两个节点添加到billTo节点，注意插入位置
-		((Element) purchaseOrder_abc1.getElementsByTagName("billTo").item(0)).insertBefore(typeElement_bill, purchaseOrder_abc1.getElementsByTagName("billTo").item(0).getFirstChild());
-		
+		((Element) purchaseOrder.getElementsByTagName("billTo").item(0)).insertBefore(typeElement_bill, purchaseOrder.getElementsByTagName("billTo").item(0).getFirstChild());
 	}
 
 	/**
@@ -170,22 +164,11 @@ public class DivideByDOM {
 		//向子节点<IBM_COMP>中添加<purchaseOrder>节点的内容
 		//<purchaseOrder>从ipo.xml文件中获得
 		//复制doc_ipo中的purchaseOrder节点到element_IBM_COMP的子节点
-		
 		element_IBM_COMP.appendChild(doc_ABC.importNode(purchaseOrder1, true));
 		element_IBM_COMP.appendChild(doc_ABC.importNode(purchaseOrder2, true));
 		root.appendChild(element_IBM_COMP);
 		doc_ABC.appendChild(root);
-		
-		DOMImplementationRegistry registry = DOMImplementationRegistry.newInstance();
-		DOMImplementationLS domImplementationLS = (DOMImplementationLS) registry.getDOMImplementation("LS");
-		LSSerializer serializer = domImplementationLS.createLSSerializer();
-		serializer.getDomConfig().setParameter("format-pretty-print", true);
-		LSOutput output = domImplementationLS.createLSOutput();
-		output.setEncoding("UTF-8");
-		FileWriter stringOut = new FileWriter("ABC_COMP.xml");
-		output.setCharacterStream(stringOut);
-		serializer.write(doc_ABC, output);
-		
+		output(doc_ABC,"/Users/zhuyikun/xml/ABC_COMP.xml");
 	}
 	/**
 	 * 创建IBM_COMP.xml
@@ -211,74 +194,27 @@ public class DivideByDOM {
 		element_IBM_COMP.appendChild(doc_IBM.importNode(purchaseOrder, true));
 		root.appendChild(element_IBM_COMP);
 		doc_IBM.appendChild(root);
-		
+		output(doc_IBM,"/Users/zhuyikun/xml/IBM_COMP.xml");
+	}
+	/**
+	 * 创建xml文件中，最后输出部分共同操作
+	 * @param doc
+	 * @param xmlpath
+	 * @throws ClassNotFoundException
+	 * @throws InstantiationException
+	 * @throws IllegalAccessException
+	 * @throws ClassCastException
+	 * @throws IOException
+	 */
+	private static void output(Document doc,String xmlpath) throws ClassNotFoundException, InstantiationException, IllegalAccessException, ClassCastException, IOException{
 		DOMImplementationRegistry registry = DOMImplementationRegistry.newInstance();
 		DOMImplementationLS domImplementationLS = (DOMImplementationLS) registry.getDOMImplementation("LS");
 		LSSerializer serializer = domImplementationLS.createLSSerializer();
 		serializer.getDomConfig().setParameter("format-pretty-print", true);
 		LSOutput output = domImplementationLS.createLSOutput();
 		output.setEncoding("UTF-8");
-		FileWriter stringOut = new FileWriter("IBM_COMP.xml");
+		FileWriter stringOut = new FileWriter(xmlpath);
 		output.setCharacterStream(stringOut);
-		serializer.write(doc_IBM, output);
+		serializer.write(doc, output);
 	}
-	/**
-	 * 清除属性值
-	 * @param purchaseOrder
-	 */
-	private static void clearAttributes_IBM(Element purchaseOrder) {
-		// TODO Auto-generated method stub
-		//判断purchaseOrder含有子节点（在这个文件中，purchaseOrder一定存在子节点）
-		if (purchaseOrder.hasChildNodes()) {
-			//获取purchaseOrder的子节点shipTo
-			NodeList shipTonodList= purchaseOrder.getElementsByTagName("shipTo");
-			//清除shipTo的属性值
-			shipTonodList.item(0).getAttributes().removeNamedItem("export-code");
-			shipTonodList.item(0).getAttributes().removeNamedItem("type");
-			//获取purchaseOrder的子节点billTo
-			NodeList billTonodList= purchaseOrder.getElementsByTagName("billTo");
-			//清除type的属性值
-			billTonodList.item(0).getAttributes().removeNamedItem("type");
-			//获取purchaseOrder的子节点items
-			Element items =  (Element) purchaseOrder.getElementsByTagName("Items").item(0);
-			//获取items的子节点item
-			NodeList item= items.getElementsByTagName("item");
-			for (int i = 0; i < item.getLength(); i++) {
-				//清除每一个item的属性值
-				item.item(i).getAttributes().removeNamedItem("partNum");
-			}
-		}
-		//清除purchaseOrder的属性值
-		purchaseOrder.getAttributes().removeNamedItem("comp_name"); 
-	}
-	/**
-	 * 清除属性值
-	 * @param purchaseOrder
-	 */
-	private static void clearAttributes_ABC(Element purchaseOrder) {
-		// TODO Auto-generated method stub
-		//判断purchaseOrder含有子节点（在这个文件中，purchaseOrder一定存在子节点）
-		if (purchaseOrder.hasChildNodes()) {
-			//获取purchaseOrder的子节点shipTo
-			NodeList shipTonodList= purchaseOrder.getElementsByTagName("shipTo");
-			//清除shipTo的属性值
-			shipTonodList.item(0).getAttributes().removeNamedItem("export-code");
-			shipTonodList.item(0).getAttributes().removeNamedItem("type");
-			//获取purchaseOrder的子节点billTo
-			NodeList billTonodList= purchaseOrder.getElementsByTagName("billTo");
-			//清除type的属性值
-			billTonodList.item(0).getAttributes().removeNamedItem("type");
-			//获取purchaseOrder的子节点items
-			Element items =  (Element) purchaseOrder.getElementsByTagName("Items").item(0);
-			//获取items的子节点item
-			NodeList item= items.getElementsByTagName("item");
-			for (int i = 0; i < item.getLength(); i++) {
-				//清除每一个item的属性值
-				item.item(i).getAttributes().removeNamedItem("partNum");
-			}
-		}
-		//清除purchaseOrder的属性值
-		purchaseOrder.getAttributes().removeNamedItem("comp_name"); 
-	}
-
 }
