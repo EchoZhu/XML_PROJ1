@@ -1,10 +1,9 @@
-package com.echo.jdom;
+package divide;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
-
 import org.jdom.Attribute;
 import org.jdom.Document;
 import org.jdom.Element;
@@ -12,31 +11,46 @@ import org.jdom.input.SAXBuilder;
 import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
 
-public class DivideByJDOM {
-
+public class DivideByJdom {
+	private static int tag = 0;
+	private static Element purchaseOrder_ibm = null;
+	private static Element purchaseOrder_abc1 = null;
+	private static Element purchaseOrder_abc2 = null;
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
-		// TODO Auto-generated method stub
+		//解析
 		SAXBuilder builder = new SAXBuilder();
 		Document doc_ipo = builder.build(new File("ipo.xml"));
+		//创建目标文件
 		Document doc_abc = new Document();
 		Document doc_ibm = new Document();
+		
 		Element purchaseOrders = doc_ipo.getRootElement();
+		//获取子节点
 		List purchaseOrderList = purchaseOrders.getChildren();
-		for (Object purchaseOrderObject:purchaseOrderList) {
-			Element purchaseOrder = (Element) purchaseOrderObject;
+		for (Object purchaseOrderObject:purchaseOrderList){
+			Element purchaseOrder = (Element)purchaseOrderObject;
 			List attList = purchaseOrder.getAttributes();
-			for (Object e : attList) {
+			for (Object e: attList){
 				Attribute attr = (Attribute) e;
-				if (attr.getName().equals("comp_name")) {
-					//获取到ABC所在节点
-					if (attr.getValue().endsWith("ABC")) {
-						System.out.println("ABC");
+				if (attr.getName().equals("comp_name")){
+					//获取ABC所在节点
+					if(attr.getValue().equals("ABC")){
+						if (tag < 1){
+							purchaseOrder_abc1 = purchaseOrder;
+							//将节点属性转化为子节点
+							arrangeElement(purchaseOrder_abc1);
+							tag ++;
+						}else{
+							purchaseOrder_abc2 = purchaseOrder;
+							arrangeElement(purchaseOrder_abc2);
+							creatABC_COMP(doc_abc,purchaseOrder_abc1,purchaseOrder_abc2);
+						}
 					}
 					//获取到IBM所在节点
-					if (attr.getValue().endsWith("IBM")) {
+					if (attr.getValue().endsWith("IBM")){
 						System.out.println("IBM");
 						arrangeElement(purchaseOrder);
 						createIBM_COMP(doc_ibm,purchaseOrder);
@@ -44,9 +58,7 @@ public class DivideByJDOM {
 				}
 			}
 		}
-
 	}
-
 	private static void createIBM_COMP(Document doc,Element purchaseOrder) throws IOException {
 		// TODO Auto-generated method stub
 		Element rootElement = new Element("purchaseOrders");
@@ -67,8 +79,34 @@ public class DivideByJDOM {
 		FileOutputStream fos = new FileOutputStream("IBM_COMP.xml");
 		xmlOutputter.output(doc, fos);
 	}
-
-
+	
+	
+	private static void creatABC_COMP(Document doc,Element purchaseOrder1,Element purchaseOrder2) throws IOException {
+		//TODO
+		Element rootElement = new Element("purchaseOrders");
+		Element ABC_COMP = new Element("ABC_COMP");
+		//清除purchase的属性值
+		Element purchasePrder1Element = (Element)purchaseOrder1.clone();
+		Element purchasePrder2Element = (Element)purchaseOrder2.clone();
+		purchasePrder1Element.removeAttribute("comp_name");
+		purchasePrder2Element.removeAttribute("comp_name");
+		
+		
+		ABC_COMP.addContent(0,purchasePrder1Element);
+		ABC_COMP.addContent(1,purchasePrder2Element);
+		rootElement.addContent(ABC_COMP);
+		doc.setRootElement(rootElement);
+		
+		Format format = Format.getPrettyFormat();
+		format.setIndent("    ").setEncoding("UTF-8");
+		XMLOutputter xmlOutputter = new XMLOutputter(format);
+		FileOutputStream fos = new FileOutputStream("ABC_COMP.xml");
+		xmlOutputter.output(doc, fos);
+		
+	}
+	
+	
+	
 	private static void arrangeElement(Element purchaseOrder) {
 		// TODO Auto-generated method stub
 		//得到purchaseOrder的子节点shipTo和billTo
@@ -112,4 +150,6 @@ public class DivideByJDOM {
 		}
 	}
 
+
 }
+
