@@ -3,7 +3,7 @@ package com.xml.proj1;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-public class SaxParse {
+public class DisplayBySAX {
 
 	/**
 	 * @param args

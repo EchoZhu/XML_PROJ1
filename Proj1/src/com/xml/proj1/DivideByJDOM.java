@@ -64,8 +64,7 @@ public class DivideByJDOM{
 		
 		//清除purchaseOrder的属性值
 		Element purchaseOrderElement = (Element)purchaseOrder.clone();
-		purchaseOrderElement.removeAttribute("comp_name");
-		
+		purchaseOrderElement.removeAttribute("	");
 		
 		IBM_COMP.addContent(purchaseOrderElement);
 		rootElement.addContent(IBM_COMP);
@@ -102,9 +101,6 @@ public class DivideByJDOM{
 		xmlOutputter.output(doc, fos);
 		
 	}
-	
-	
-	
 	private static void arrangeElement(Element purchaseOrder) {
 		// TODO Auto-generated method stub
 		//得到purchaseOrder的子节点shipTo和billTo

@@ -81,6 +81,7 @@ public class DivideByDOM {
 	}
 	/**
 	 * 将节点属性值转化为子节点
+	 * 并删除属性
 	 * 
 	 * @param document
 	 * @param purchaseOrder_ibm
